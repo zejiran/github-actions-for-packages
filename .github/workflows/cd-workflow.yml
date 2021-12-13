@@ -1,7 +1,9 @@
-name: Node CI
+name: Docker CD
 
-on: [push]
-
+on:
+  push:
+    paths:
+      - "**Dockerfile**"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -40,3 +42,24 @@ jobs:
           npm test
         env:
           CI: true
+  Build-and-Push-Docker-Image:
+    runs-on: ubuntu-latest
+    needs: test
+    name: Docker Build, Tag, Push
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Download built artifact
+      uses: actions/download-artifact@main
+      with:
+        name: webpack artifacts
+        path: public
+    - name: Build container image
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{github.actor}}
+        password: ${{secrets.GITHUB_TOKEN}}
+        registry: docker.pkg.github.com
+        repository: zejiran/github-actions-for-packages/tic-tac-toe
+        tag_with_sha: true
